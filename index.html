@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Awesome Music Player</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --accent-color: #6e56cf;
+      --secondary-color: #282c34;
+      --text-color: #f0f6fc;
+      --shape-color: rgba(255, 255, 255, 0.07);
+      --font-main: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      color: var(--text-color);
+      background: var(--bg-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .player-container {
+      width: 400px;
+      background: var(--secondary-color);
+      border-radius: 20px;
+      box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.5);
+      padding: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .player-container::before,
+    .player-container::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      background: var(--shape-color);
+      animation: float 6s infinite alternate;
+    }
+
+    .player-container::before {
+      width: 150px;
+      height: 150px;
+      top: -40px;
+      left: -60px;
+    }
+
+    .player-container::after {
+      width: 120px;
+      height: 120px;
+      bottom: -50px;
+      right: -40px;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(15px); }
+    }
+
+    .player-image {
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .player-image img {
+      width: 100%;
+      object-fit: cover;
+    }
+
+    .player-info {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .player-info h2 {
+      font-size: 1.5rem;
+      color: var(--accent-color);
+    }
+
+    .player-info p {
+      font-size: 1rem;
+      color: var(--text-color);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .controls button {
+      background: var(--accent-color);
+      color: var(--text-color);
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .controls button:hover {
+      transform: scale(1.1);
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      margin-top: 15px;
+    }
+
+    .slider-container input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--secondary-color);
+      height: 5px;
+      border-radius: 5px;
+      outline: none;
+      overflow: hidden;
+    }
+
+    .slider-container input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      cursor: pointer;
+    }
+
+    .volume-icon {
+      margin-right: 10px;
+    }
+
+    .time-display {
+      text-align: center;
+      color: var(--text-color);
+      margin-top: 10px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="player-container">
+    <!-- Audio element for playback -->
+    <audio id="audio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" preload="metadata"></audio>
+    
+    <div class="player-image">
+      <img src="cover.jpg" alt="Album Art">
+    </div>
+    <div class="player-info">
+      <h2>Sweet Moments</h2>
+      <p>Spirit, 2024</p>
+    </div>
+    
+    <!-- Controls -->
+    <div class="controls">
+      <!-- Previous button -->
+      <button onclick="prevSong()"><span class="material-icons">skip_previous</span></button>
+      <!-- Play/Pause button -->
+      <button id="playPauseBtn" onclick="togglePlayPause()"><span class="material-icons">play_arrow</span></button>
+      <!-- Next button -->
+      <button onclick="nextSong()"><span class="material-icons">skip_next</span></button>
+    </div>
+
+    <!-- Audio Progress & Volume Controls -->
+    <div class="slider-container">
+      <span class="material-icons volume-icon">volume_up</span>
+      <input type="range" min="0" max="1" step="0.1" value="0.8" id="volumeSlider" oninput="adjustVolume(this.value)">
+    </div>
+
+    <!-- Time Display -->
+    <div class="time-display">
+      <span id="currentTime">00:00</span> / <span id="durationTime">00:00</span>
+    </div>
+
+    <!-- Progress Bar -->
+    <input type="range" id="progressBar" value="0" max="100" step="0.1" onchange="setProgress(this.value)">
+  </div>
+
+  <script>
+    const audio = document.getElementById("audio");
+    const playPauseBtn = document.getElementById("playPauseBtn");
+    const volumeSlider = document.getElementById("volumeSlider");
+    const progressBar = document.getElementById("progressBar");
+    const currentTimeDisplay = document.getElementById("currentTime");
+    const durationTimeDisplay = document.getElementById("durationTime");
+
+    // Play/Pause functionality
+    function togglePlayPause() {
+      if (audio.paused) {
+        audio.play();
+        playPauseBtn.innerHTML = '<span class="material-icons">pause</span>';
+      } else {
+        audio.pause();
+        playPauseBtn.innerHTML = '<span class="material-icons">play_arrow</span>';
+      }
+    }
+
+    // Adjust Volume
+    function adjustVolume(value) {
+      audio.volume = value;
+    }
+
+    // Skip 10 seconds backward
+    function prevSong() {
+      audio.currentTime = Math.max(0, audio.currentTime - 10);
+    }
+
+    // Skip 10 seconds forward
+    function nextSong() {
+      audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+    }
+
+    // Update the time and progress bar
+    audio.addEventListener('timeupdate', function() {
+      // Update current time
+      let currentTime = formatTime(audio.currentTime);
+      currentTimeDisplay.textContent = currentTime;
+
+      // Update duration time
+      let duration = formatTime(audio.duration);
+      durationTimeDisplay.textContent = duration;
+
+      // Update progress bar
+      let progress = (audio.currentTime / audio.duration) * 100;
+      progressBar.value = progress;
+    });
+
+    // Format time to MM:SS
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    // Set the progress of the song
+    function setProgress(value) {
+      const newTime = (value / 100) * audio.duration;
+      audio.currentTime = newTime;
+    }
+
+    // When the audio is loaded, set the duration
+    audio.addEventListener('loadedmetadata', function() {
+      let duration = formatTime(audio.duration);
+      durationTimeDisplay.textContent = duration;
+    });
+  </script>
+</body>
+</html>
